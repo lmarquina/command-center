@@ -47,8 +47,9 @@ try {
   }
   async function hold(ms, meta) { const end = Date.now() + ms; do { await frame(meta); } while (Date.now() < end); }
 
-  const spoken = SCRIPT.filter((s) => s.say).length; let k = 0;
+  const spoken = SCRIPT.filter((s) => s.say).length; let k = 0; const t0 = Date.now(), scenes = [];
   for (const s of SCRIPT) {
+    scenes.push({ at: (Date.now() - t0) / 1000, say: s.say || null, what: s.what || (s.title && s.title.p) || "", clip: s.clip || null });
     if (s.title) { await frame({ title: s.title }); await sleep(s.ms); continue; }
     if (s.say) { k++; await say(s.say); }
     await hold(s.ms, { say: s.say, what: s.what, step: s.say ? `${k} / ${spoken}` : "" });
@@ -59,6 +60,13 @@ try {
   const list = shots.slice(0, -1).map(([f, t], i) => `file '${f}'\nduration ${((shots[i + 1][1] - t) / 1000).toFixed(3)}`).join("\n") + `\nfile '${shots[shots.length - 1][0]}'\n`;
   fs.writeFileSync(path.join(frames, "list.txt"), list);
   execFileSync(ffmpeg, ["-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", path.join(frames, "list.txt"), "-vf", "fps=30,format=yuv420p", "-c:v", "libx264", "-crf", "18", "-preset", "slow", "-movflags", "+faststart", OUT]);
+  // Scene start times, for cutting clips and timing a voice-over.
+  fs.writeFileSync(OUT.replace(/\.mp4$/, ".scenes.json"), JSON.stringify(scenes.map((x) => ({ ...x, at: Math.round(x.at * 10) / 10 })), null, 1));
+  for (const name of [...new Set(scenes.map((x) => x.clip).filter(Boolean))]) {   // one short clip per group of scenes
+    const i0 = scenes.findIndex((x) => x.clip === name), i1 = scenes.findLastIndex((x) => x.clip === name);
+    const from = Math.max(0, scenes[i0].at - 0.3), to = i1 + 1 < scenes.length ? scenes[i1 + 1].at : null;
+    execFileSync(ffmpeg, ["-y", "-loglevel", "error", "-ss", String(from), ...(to ? ["-to", String(to)] : []), "-i", OUT, "-c:v", "libx264", "-crf", "18", "-movflags", "+faststart", OUT.replace(/\.mp4$/, `-${name}.mp4`)]);
+  }
   console.log(`wrote ${OUT} (${shots.length} frames, ${((shots[shots.length - 1][1] - shots[0][1]) / 1000).toFixed(0)} s)`);
 } finally {
   await browser.close();
