@@ -28,7 +28,7 @@ export function tokenEquals(given, expected) {
 /** Defaults for the values in config `gateway.glasses.tuning`. */
 export const TUNING = { maxRecordingSeconds: 300, minPaintMs: 1000, homeRefreshMs: 30000, healthRefreshMs: 60000 };
 
-export function startGlassesGateway({ agentd, live, token, port = 3100, host = "0.0.0.0", allowedOrigins = [], log = () => {}, voiceUrl = "http://127.0.0.1:3200", speakEvents = true, tls = null, runDir = null, tuning = {}, localPort }) {
+export function startGlassesGateway({ agentd, live, token, port = 3100, host = "0.0.0.0", allowedOrigins = [], log = () => {}, voiceUrl = "http://127.0.0.1:3200", speakEvents = true, tls = null, runDir = null, tuning = {}, localPort, providers = null }) {
   const T = { ...TUNING, ...tuning };
   const latest = {};                 // sessionId -> latest assistant text (from events)
   let homeCache = null, homeAt = 0, projects = [], allSessions = [];
@@ -221,7 +221,7 @@ export function startGlassesGateway({ agentd, live, token, port = 3100, host = "
     const tStt = Date.now();
     const h = await home().catch(() => null);
     const requests = h ? requestsFrom(h) : [];
-    const proposal = parseVoice(stt.text, p.prev, { requests, projects, sessions: allSessions.length ? allSessions.map((x) => ({ sessionId: x.sessionId, provider: x.provider, title: x.title })) : sessionsFor(h), ...screenCtx, free: p.auto });
+    const proposal = parseVoice(stt.text, p.prev, { requests, projects, sessions: allSessions.length ? allSessions.map((x) => ({ sessionId: x.sessionId, provider: x.provider, title: x.title })) : sessionsFor(h), ...screenCtx, free: p.auto, quickQuestions: !providers || providers.includes("chatgpt") });
     const tParse = Date.now();
     const evalRow = { at: new Date().toISOString(), mode: "commands", text: stt.text, screen: p.prev.screen, listProvider: screenCtx.listProvider, visible: screenCtx.visible.map((x) => x.title), free: !!p.auto,
       proposal: { action: proposal.action, to: proposal.to, sessionId: proposal.sessionId, provider: proposal.provider, heard: proposal.heard, scope: proposal.scope },

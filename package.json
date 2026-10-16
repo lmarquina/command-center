@@ -10,7 +10,6 @@
     "packages/*",
     "packages/providers/*",
     "apps/*",
-    "extension",
     "tools/*"
   ],
   "scripts": {
@@ -20,7 +19,6 @@
     "sim": "node packages/stack/src/cli.mjs sim",
     "agentd": "node apps/agentd/src/agentd.mjs",
     "agentctl": "node apps/agentd/src/agentctl.mjs",
-    "bridge": "node extension/cli/bridge.mjs",
     "gateway": "node apps/gateway/src/server.mjs",
     "voice:setup": "sh services/voice/run.sh setup",
     "voice": "sh services/voice/run.sh start",

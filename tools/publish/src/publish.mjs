@@ -28,6 +28,19 @@ const work = path.join(RUN_DIR, "publish"), out = path.join(work, "export"), clo
 fs.rmSync(out, { recursive: true, force: true }); fs.mkdirSync(out, { recursive: true });
 execFileSync("/bin/sh", ["-c", `git archive ${sha} | tar -x -C "${out}"`], { cwd: REPO_ROOT });
 for (const ex of cfg.exclude || []) fs.rmSync(path.join(out, ex), { recursive: true, force: true });
+// Excluded workspaces must also leave the workspace list and the lockfile, or a fresh clone can't install.
+if (cfg.exclude && cfg.exclude.length) {
+  const pj = path.join(out, "package.json"), root = JSON.parse(fs.readFileSync(pj, "utf8"));
+  root.workspaces = root.workspaces.filter((w) => w.includes("*") || fs.existsSync(path.join(out, w)));
+  for (const [k, v] of Object.entries(root.scripts || {})) if (cfg.exclude.some((ex) => v.includes(ex))) delete root.scripts[k];
+  fs.writeFileSync(pj, JSON.stringify(root, null, 2) + "\n");
+  for (const d of fs.readdirSync(path.join(out, "apps")).map((x) => path.join(out, "apps", x, "package.json")).filter((f) => fs.existsSync(f))) {
+    const j = JSON.parse(fs.readFileSync(d, "utf8")); const names = cfg.excludedPackages || [];
+    for (const n of names) { if (j.dependencies) delete j.dependencies[n]; }
+    fs.writeFileSync(d, JSON.stringify(j, null, 2) + "\n");
+  }
+  execFileSync("npm", ["install", "--package-lock-only", "--ignore-scripts", "--no-audit", "--no-fund"], { cwd: out, stdio: "ignore" });
+}
 
 // 2. Scan every text file; refuse on any hit.
 const files = [];

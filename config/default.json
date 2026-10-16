@@ -2,11 +2,11 @@
   "demo": false,
   "providers": [
     "claude-code",
-    "codex",
-    "cowork",
-    "chatgpt"
+    "codex"
   ],
   "claudeCode": {
+    "auth": "apiKey",
+    "keychainService": "command-center-anthropic",
     "model": null,
     "settingSources": null
   },

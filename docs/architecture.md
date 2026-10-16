@@ -1,5 +1,8 @@
 # Architecture
 
+> The open-source version includes the Claude Code and Codex providers. The web bridge (Cowork, ChatGPT) and
+> the Claude Desktop launcher shown below belong to the private build; there is no supported API for them yet.
+
 ```
 G2 glasses ⇄ Even app (phone) ⇄ apps/glasses (thin web app)
                                    ⇅ wss (Tailscale)

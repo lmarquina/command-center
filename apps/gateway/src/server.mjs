@@ -121,7 +121,7 @@ if (process.argv[1] && process.argv[1].endsWith("server.mjs")) {
     // Without a certificate the token would cross the network in clear text: listen on this computer only, unless
     // plain Wi-Fi was explicitly allowed (gateway.glasses.allowPlainLan).
     const host = tls || g.allowPlainLan ? "0.0.0.0" : "127.0.0.1";
-    glasses = startGlassesGateway({ agentd, live, token: TOKEN, port: g.port, host, allowedOrigins: origins, log, tls, runDir: RUN_DIR, voiceUrl: CONFIG.voice.url, tuning: g.tuning });
+    glasses = startGlassesGateway({ agentd, live, token: TOKEN, port: g.port, host, allowedOrigins: origins, log, tls, runDir: RUN_DIR, voiceUrl: CONFIG.voice.url, tuning: g.tuning, providers: CONFIG.providers });
     console.error(`Glasses gateway ${tls ? `wss://${tls.host}` : `ws://${host}`}:${g.port}  origins=${origins.join(",")}`);
   }
 }

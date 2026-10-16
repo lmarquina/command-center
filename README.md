@@ -1,8 +1,12 @@
 # Command Center
 
-**Your AI agents, on your glasses.** Run Claude Code, Codex, Claude Cowork and ChatGPT from
+**Your AI agents, on your glasses.** Run Claude Code and Codex from
 [Even Realities G2](https://www.evenrealities.com/) smart glasses, by voice, while you walk around. See what needs
-you, approve a command, answer a question, talk to a session, start a task. Everything runs on your own Mac.
+you, approve a command, answer a question, talk to a session. Everything runs on your own Mac.
+
+> This open-source version covers the harnesses with supported programmatic interfaces: Claude Code (Anthropic's
+> Agent SDK) and Codex (its app server). My private build also drives Claude Cowork and ChatGPT, but they have no
+> supported API, so those parts stay out of this repository until they do.
 
 ![Command Center demo: approving a Codex command from the glasses](docs/media/demo-approval.jpg)
 
@@ -32,7 +36,7 @@ We kept running into the same gaps:
 
 | Gap we kept hitting | What Command Center does |
 |---|---|
-| One harness at a time | **One place for four:** Claude Code, Codex, Cowork and ChatGPT side by side, with one "what needs me" list across all of them |
+| One harness at a time | **One inbox across harnesses:** Claude Code and Codex side by side, with one "what needs me" list across both, and a provider interface for adding more |
 | New sessions only, started from the glasses | **Your existing sessions:** the ones you started at your desk, opened where you left off, resumed and steered |
 | Agents ask for permission, the glasses can't answer safely | **Approvals and questions by voice**, with a confirm step. Approving needs the word "approve"; a stray "yes" never runs anything |
 | A wall of terminal text on a 576×288 display | **Screens designed for the lens:** icons, status glyphs, short rows, and big type that switches on by itself while you walk |
@@ -47,20 +51,15 @@ We kept running into the same gaps:
   - **Push to talk:** hold the temple and speak.
   - **Free talk:** hands-free. It only reacts to your own voice and never hears its own replies.
 - **What's on screen is what you can say:**
-  - "Open sourdough starter tips" or "the second one" picks a row on screen.
-  - "Open ChatGPT kitchen remodel" searches that harness first.
+  - "Open refactor auth middleware" or "the second one" picks a row on screen.
+  - "Open Codex migration" searches that harness first.
   - "What needs me", "next", "approve", "deny", "option B", "stop", "read it", "help".
 - **Talk to a session:** inside a session, anything you say becomes a message to that agent (after a confirm).
-  From home, anything else becomes a quick question to ChatGPT.
-- **Start work:** "new task in Strategy: draft talking points for the board meeting" starts a Cowork task in
-  Claude Desktop, in that project.
-- **Reasoning on demand:** open a session's steps (tool calls, commands, Cowork step groups) and drill into one.
+- **Reasoning on demand:** open a session's steps (tool calls, commands) and drill into one.
 - **Walking mode:** big text that switches on by itself when the glasses detect you walking, and off again when
   you stop.
 - **System check:** "system check" lists every moving part and what to do if one is down.
 - **Runs itself:** a supervisor restarts anything that crashes, and the whole stack starts when you log in.
-
-![Opening the Cowork list from the glasses](docs/media/demo-cowork.jpg)
 
 ## How it works
 
@@ -70,10 +69,9 @@ G2 glasses ⇄ Even app on the phone ⇄ apps/glasses (thin web app: draws pages
                                     apps/gateway ── services/voice (speech ⇄ text, 127.0.0.1 only)
                                          ⇅ local Unix socket
                                     apps/agentd: one session layer for every harness
-        ┌───────────────┬──────────────┬──────────────────────────┬──────────────────────────┐
-   Claude Code        Codex          Cowork (claude.ai)          ChatGPT (chatgpt.com)
-   Agent SDK          app-server     Chrome extension +          Chrome extension
-   (official)         (official)     Claude Desktop for new tasks
+                         ┌────────────────────┴────────────────────┐
+                    Claude Code                                  Codex
+              Agent SDK (official)                        app-server (official)
 ```
 
 **Design rules (each one came from a real bug):**
@@ -94,10 +92,8 @@ More in [`docs/`](docs).
 | Even Realities G2 + the Even app | the glasses | Even Hub **developer mode** to load the app (sign in at hub.evenrealities.com). |
 | Node 22 | everything | Installed inside the project by `npm install`. Nothing global. |
 | [uv](https://docs.astral.sh/uv/) | voice | Python and packages stay inside `services/voice`. |
-| Claude Code, signed in | Claude Code sessions | Uses your existing Claude Code login through the Agent SDK. **No API key.** |
+| Claude Code + an Anthropic API key | Claude Code sessions | Through the Agent SDK. The key lives in the macOS Keychain (see Install). |
 | Codex (the ChatGPT desktop app or the Codex CLI), signed in | Codex sessions | Talks to the bundled `codex app-server`. **No API key.** |
-| Google Chrome, signed in to claude.ai / chatgpt.com | Cowork, ChatGPT | The extension uses your normal browser session. |
-| Claude Desktop | starting new Cowork tasks | Driven through macOS Accessibility. Never clicks consent dialogs. |
 | [Tailscale](https://tailscale.com/) + `tailscale cert` | connecting the phone | Your own private network, also over cellular. The phone connects only over TLS (set `gateway.glasses.allowPlainLan` to allow plain Wi-Fi at home). Use `--accept-dns=false` if you run another VPN. |
 | OpenAI API key (optional) | long dictation, voice fallback | Stored in the macOS Keychain, never in a file. Without it, everything stays local. |
 
@@ -107,13 +103,9 @@ More in [`docs/`](docs).
 git clone https://github.com/lmarquina/command-center.git && cd command-center
 npm install                      # project-local Node 22 and dependencies
 npm run voice:setup              # speech service (downloads ~5 GB of models on first start)
-npm run build:ax -w @command-center/desktop-launcher   # helper for starting Cowork tasks
+# Anthropic API key for Claude Code: copy the key, then
+security add-generic-password -U -s command-center-anthropic -a "$USER" -w "$(pbpaste)" && pbcopy < /dev/null
 ```
-
-**Chrome extension (for Cowork and ChatGPT):**
-1. Open `chrome://extensions`, turn on Developer mode, click **Load unpacked** and choose `extension/chrome`.
-2. Run `npm run install-host -w @command-center/extension -- <extension id from that page>`.
-3. Reload the extension.
 
 **Run it:**
 
@@ -140,8 +132,8 @@ Then say **"system check"** on the glasses.
 </details>
 
 **Try it without glasses or accounts:** set `"demo": true` in `config/local.json`, run `npm run dev`, then
-`npm run sim`. This gives you made-up sessions in all four harnesses and the official G2 simulator. That's how
-the screenshots above were made (`tools/demo` records the video).
+`npm run sim`. This gives you made-up sessions and the official G2 simulator. That's how the screenshot above was
+made (`tools/demo/record.mjs` records the video).
 
 ## Settings
 
@@ -155,10 +147,8 @@ long dictation cloud) and screen timing.
   - The services listen on `127.0.0.1`. The glasses endpoint is the only exception: it needs a token and accepts
     only its own app's origin.
   - Session content stays on your Mac and your own Tailscale network.
-- **Official interfaces where they exist:** Claude Code (Agent SDK) and Codex (app-server).
-- **Cowork and ChatGPT are driven through their web pages.** Their consumer terms restrict automated use, so
-  that part is **for personal use at your own risk**. It can break when those sites change; it then refuses to
-  act rather than guessing.
+- **Official interfaces only:** Claude Code through Anthropic's Agent SDK with your own API key (as Anthropic
+  asks of third-party tools), Codex through its app server.
 - **Every action asks first.** Sending, approving, creating and stopping all need a tap or a spoken "do it".
   Approvals need the word "approve".
 - **Single user, macOS only, early.** It's tested daily by one person, and it isn't hardened for shared or
@@ -173,7 +163,6 @@ long dictation cloud) and screen timing.
 | `apps/agentd` | daemon that hosts the providers on a local socket, and its CLI (`npm run agentctl`) |
 | `apps/gateway` | web UI, glasses endpoint, voice commands, screens, notifications |
 | `apps/glasses` | the Even Hub app (thin client) |
-| `extension/` | Chrome extension + native messaging host |
 | `services/voice` | speech-to-text / text-to-speech (MLX, optional OpenAI fallback) |
 | `packages/stack` | supervisor, `npm run dev`, login item |
 | `tools/` | publishing and demo recording |

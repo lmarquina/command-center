@@ -21,7 +21,7 @@ Tailscale certificate (`tailscale cert`). Machine-specific network notes live in
 - When the phone reports its page hidden, replies are sent as Web Push to the "Command Center" home-screen
   web app instead (payload end-to-end encrypted; Siri can announce them).
 
-## Starting new Cowork tasks on the Mac
+## Starting new Cowork tasks on the Mac (private build only)
 Only Claude Desktop binds a task to this Mac. The launcher drives Desktop through macOS Accessibility: New →
 optional project (matched by stable id) → exact prompt read-back → Start. It never clicks consent dialogs
 and reports `CONSENT_REQUIRED` instead. `claude://` deep links are not used (prefill only + a per-launch

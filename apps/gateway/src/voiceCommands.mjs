@@ -55,7 +55,8 @@ export function titleSim(spoken, title) {
  * @param {string} transcript
  * @param {{screen:string, sessionId?:string, requestId?:string}} st
  * @param {{requests?:Array, sessions?:Array<{sessionId,provider,title,status?}>, visible?:Array<{sessionId,provider,title}>,
- *          listProvider?:string, projects?:string[], canSend?:boolean, free?:boolean}} ctx
+ *          listProvider?:string, projects?:string[], canSend?:boolean, free?:boolean, quickQuestions?:boolean}} ctx
+ *   quickQuestions: false when ChatGPT is not enabled (free speech on home then isn't a question)
  *   sessions: every known session; visible: the session rows on the current screen, in order;
  *   listProvider: the harness whose list is on screen (e.g. after "go to ChatGPT").
  */
@@ -163,7 +164,7 @@ export function parseVoice(transcript, st = {}, ctx = {}) {
   // 6. Outside a session: maybe a bare session/harness name.
   const r = openTarget(t, sessions, scope); if (r && r.action !== "choose") return r;
   // 7. Outside a session (home, lists, help…): anything else is a quick question for ChatGPT ("I just have a question").
-  if (!inSession && t.split(" ").length >= 2) return { action: "create", provider: "chatgpt", firstMessage: raw };
+  if (!inSession && t.split(" ").length >= 2 && ctx.quickQuestions !== false) return { action: "create", provider: "chatgpt", firstMessage: raw };
   if (r) return r;
   return { action: "none", reason: "say: needs you, working, next, go to <session>, or new task" };
 }

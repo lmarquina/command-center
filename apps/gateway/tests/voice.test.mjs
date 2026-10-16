@@ -167,3 +167,8 @@ test("'Did you mean' card: yes takes a single option, ordinals and names pick, c
   assert.deepEqual(parseVoice("cancel", two, {}), { action: "nav", to: "back" });
   assert.notEqual(parseVoice("yes", two, {}).action, "nav");                     // "yes" is ambiguous with two options
 });
+
+test("without ChatGPT enabled, free speech on home is not turned into a question", () => {
+  const r = parseVoice("When was Lincoln born?", { screen: "home" }, { quickQuestions: false });
+  assert.notEqual(r.action, "create");
+});

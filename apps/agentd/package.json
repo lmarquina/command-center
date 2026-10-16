@@ -15,8 +15,6 @@
     "@command-center/claude-code": "*",
     "@command-center/codex": "*",
     "@command-center/core": "*",
-    "@command-center/desktop-launcher": "*",
-    "@command-center/web-bridge": "*",
     "@command-center/demo": "*"
   }
 }
