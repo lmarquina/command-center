@@ -1,0 +1,36 @@
+{
+  "name": "command-center",
+  "private": true,
+  "type": "module",
+  "description": "Control AI agent sessions (Claude Code, Codex, Cowork, ChatGPT) from Even Realities G2 glasses.",
+  "engines": {
+    "node": ">=22"
+  },
+  "workspaces": [
+    "packages/*",
+    "packages/providers/*",
+    "apps/*",
+    "extension",
+    "tools/*"
+  ],
+  "scripts": {
+    "test": "npm test --workspaces --if-present",
+    "dev": "node packages/stack/src/cli.mjs up",
+    "stop": "node packages/stack/src/cli.mjs down",
+    "sim": "node packages/stack/src/cli.mjs sim",
+    "agentd": "node apps/agentd/src/agentd.mjs",
+    "agentctl": "node apps/agentd/src/agentctl.mjs",
+    "bridge": "node extension/cli/bridge.mjs",
+    "gateway": "node apps/gateway/src/server.mjs",
+    "voice:setup": "sh services/voice/run.sh setup",
+    "voice": "sh services/voice/run.sh start",
+    "test:voice": "sh services/voice/run.sh test",
+    "status": "node packages/stack/src/cli.mjs status",
+    "publish": "node tools/publish/src/publish.mjs",
+    "login-item": "node packages/stack/src/cli.mjs login-item"
+  },
+  "devDependencies": {
+    "node": "^22"
+  },
+  "license": "MIT"
+}

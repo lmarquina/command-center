@@ -1,0 +1,22 @@
+{
+  "name": "@command-center/agentd",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "agentd": "./src/agentd.mjs",
+    "agentctl": "./src/agentctl.mjs"
+  },
+  "scripts": {
+    "test": "node --test \"tests/*.test.mjs\"",
+    "start": "node src/agentd.mjs"
+  },
+  "dependencies": {
+    "@command-center/claude-code": "*",
+    "@command-center/codex": "*",
+    "@command-center/core": "*",
+    "@command-center/desktop-launcher": "*",
+    "@command-center/web-bridge": "*",
+    "@command-center/demo": "*"
+  }
+}

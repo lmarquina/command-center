@@ -1,0 +1,22 @@
+{
+  "name": "@command-center/glasses",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "sim:app": "CC_PLAIN=1 vite",
+    "build": "vite build",
+    "qr": "node scripts/qr.mjs",
+    "test": "node --test --test-timeout=30000 \"tests/*.test.mjs\""
+  },
+  "dependencies": {
+    "@command-center/core": "*",
+    "@evenrealities/even_hub_sdk": "^0.0.16"
+  },
+  "devDependencies": {
+    "@evenrealities/evenhub-cli": "^0.1.14",
+    "@evenrealities/evenhub-simulator": "^0.9.5",
+    "vite": "^5.4.21"
+  }
+}

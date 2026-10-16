@@ -1,0 +1,16 @@
+{
+  "name": "@command-center/demo-video",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "record": "node record.mjs"
+  },
+  "devDependencies": {
+    "ffmpeg-static": "^5.2.0",
+    "playwright-core": "^1.48.0"
+  },
+  "dependencies": {
+    "@command-center/core": "*"
+  }
+}

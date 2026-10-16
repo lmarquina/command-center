@@ -1,0 +1,12 @@
+[project]
+name = "command-center-voice"
+version = "0.1.0"
+description = "Local speech-to-text and text-to-speech service for Command Center"
+requires-python = ">=3.12"
+dependencies = [
+    "misaki[en]>=0.9.4",
+    "mlx-audio>=0.5.8",
+]
+
+[tool.uv]
+package = false

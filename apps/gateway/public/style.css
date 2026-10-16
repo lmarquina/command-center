@@ -1,0 +1,39 @@
+:root { --bg:#fbfbfa; --fg:#1d1d1f; --muted:#6e6e73; --card:#fff; --line:#e5e5e2; --accent:#2f5bd3; --warn:#b4570b; --bad:#b42318; --ok:#1f7a3a; }
+@media (prefers-color-scheme: dark) { :root { --bg:#141415; --fg:#ececec; --muted:#9a9aa0; --card:#1d1d20; --line:#2c2c30; --accent:#7ea2ff; --warn:#f0a35b; --bad:#ff7b72; --ok:#56d364; } }
+* { box-sizing: border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.45 -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif; }
+header { position:sticky; top:0; display:flex; gap:16px; align-items:center; padding:12px 20px; background:var(--bg); border-bottom:1px solid var(--line); z-index:2; }
+.brand { font-weight:700; letter-spacing:.08em; color:var(--fg); text-decoration:none; }
+#counts { color:var(--muted); font-size:13px; }
+.conn { margin-left:auto; font-size:12px; color:var(--muted); }
+.conn.ok::before { content:"● "; color:var(--ok); } .conn.down::before { content:"● "; color:var(--bad); }
+main { max-width:980px; margin:0 auto; padding:16px 20px 80px; }
+h2 { font-size:12px; letter-spacing:.12em; color:var(--muted); margin:26px 0 8px; font-weight:600; }
+.list { display:flex; flex-direction:column; gap:6px; }
+.row { display:grid; grid-template-columns: 110px 1fr auto; gap:12px; align-items:center; background:var(--card); border:1px solid var(--line); border-radius:10px; padding:10px 14px; cursor:pointer; }
+.row:hover { border-color:var(--accent); }
+.prov { font-size:12px; color:var(--muted); }
+.title { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.badge { font-size:12px; padding:2px 8px; border-radius:999px; border:1px solid var(--line); color:var(--muted); white-space:nowrap; }
+.badge.working { color:var(--accent); border-color:var(--accent); } .badge.approval, .badge.approval_required { color:var(--warn); border-color:var(--warn); }
+.badge.question, .badge.waiting_for_input { color:var(--warn); border-color:var(--warn); } .badge.failure, .badge.failed { color:var(--bad); border-color:var(--bad); }
+.badge.review, .badge.complete { color:var(--ok); border-color:var(--ok); }
+.needs .row { border-left:3px solid var(--warn); }
+.empty { color:var(--muted); font-size:14px; padding:6px 2px; }
+.sess-head { display:flex; flex-wrap:wrap; gap:10px; align-items:baseline; margin-top:8px; }
+.sess-head h1 { font-size:22px; margin:0; } .mono { font:12px ui-monospace, Menlo, monospace; color:var(--muted); }
+.panel { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px; margin-top:12px; }
+.callout { border-color:var(--warn); }
+.transcript { display:flex; flex-direction:column; gap:10px; max-height:52vh; overflow:auto; }
+.msg { white-space:pre-wrap; word-wrap:break-word; } .msg .who { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; display:block; }
+.msg.user { padding-left:12px; border-left:2px solid var(--line); } .msg.tool { font:12px ui-monospace, Menlo, monospace; color:var(--muted); }
+.live { white-space:pre-wrap; min-height:1.4em; }
+.activity { font:12px ui-monospace, Menlo, monospace; color:var(--muted); max-height:140px; overflow:auto; }
+.controls { display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
+textarea { flex:1 1 100%; min-height:64px; resize:vertical; font:inherit; padding:10px; border-radius:10px; border:1px solid var(--line); background:var(--bg); color:var(--fg); }
+button { font:inherit; padding:7px 14px; border-radius:9px; border:1px solid var(--line); background:var(--card); color:var(--fg); cursor:pointer; }
+button.primary { background:var(--accent); color:#fff; border-color:var(--accent); } button.danger { color:var(--bad); border-color:var(--bad); }
+button:disabled { opacity:.4; cursor:not-allowed; }
+.err { color:var(--bad); font-size:13px; margin-top:8px; white-space:pre-wrap; }
+.caps { font-size:12px; color:var(--muted); }
+.newtask textarea, .newtask input { display:block; width:100%; box-sizing:border-box; margin:8px 0; background:var(--card); color:inherit; border:1px solid var(--line); border-radius:8px; padding:8px; font:inherit; }

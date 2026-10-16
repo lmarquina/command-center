@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Voice Test</title>
+<style>
+:root { --bg:#0e1116; --card:#171b22; --line:#2a303a; --fg:#e6e8eb; --mut:#8b93a1; --acc:#38d07a; --bad:#ff6b6b; }
+* { box-sizing:border-box; } body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.45 -apple-system, system-ui, sans-serif; }
+main { max-width:720px; margin:0 auto; padding:24px 16px; } h1 { font-size:18px; margin:0 0 4px; } .mut { color:var(--mut); font-size:13px; }
+.card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; margin-top:16px; }
+button { font:inherit; border-radius:10px; border:1px solid var(--line); background:#222833; color:var(--fg); padding:10px 16px; cursor:pointer; }
+#talk { width:100%; padding:28px; font-size:18px; user-select:none; touch-action:none; }
+#talk.on { background:var(--acc); color:#05210f; border-color:var(--acc); }
+select, textarea { font:inherit; background:#11151b; color:var(--fg); border:1px solid var(--line); border-radius:8px; padding:8px; }
+textarea { width:100%; margin:8px 0; }
+#log div { padding:8px 0; border-top:1px solid var(--line); } #log div:first-child { border-top:0; }
+.t { font-size:17px; } .err { color:var(--bad); } meter { width:100%; height:8px; }
+</style></head>
+<body><main>
+<h1>Voice pipeline test</h1>
+<div class="mut">Runs on this Mac (127.0.0.1:3200). Audio is resampled to 16 kHz mono, the same format the G2 microphone sends.</div>
+
+<div class="card">
+  <label>Speech-to-text engine <select id="stt-eng"><option value="">auto (&lt;15 s local, longer cloud)</option><option value="local">local (open model)</option><option value="cloud">cloud (OpenAI)</option></select></label>
+  <span class="mut" id="health"></span>
+  <p><label>Microphone <select id="mic"><option value="">default</option></select></label> <button id="micon">Turn on mic</button></p>
+  <p><button id="talk">Hold to talk (or hold Space)</button></p>
+  <meter id="lvl" min="0" max="1" value="0"></meter>
+  <div id="log" class="mut">Transcripts appear here.</div>
+</div>
+
+<div class="card">
+  <b>Read these phrases</b> <span class="mut">— records your voice with a known reference so models can be compared fairly. Saved only on this Mac (voice/recordings/).</span>
+  <p class="t" id="phrase"></p>
+  <button id="prev">◀</button> <span class="mut" id="pidx"></span> <button id="next">▶</button>
+  <label class="mut" style="margin-left:12px"><input type="checkbox" id="refmode" checked> use this phrase as the reference for the next recording</label>
+</div>
+
+<div class="card">
+  <label>Text-to-speech engine <select id="tts-eng"><option value="local">local (open model)</option><option value="cloud">cloud (OpenAI)</option></select></label>
+  <textarea id="say" rows="2">Codex needs your approval to run a shell command. Say approve or deny.</textarea>
+  <button id="speak">Speak</button> <span class="mut" id="tts-info"></span>
+</div>
+</main>
+<script>
+"use strict";
+const $ = (s) => document.querySelector(s);
+const PHRASES = ["Approve.", "Deny that.", "Stop the task.", "Option B.", "The second one.",
+  "New task in Weekly Newsletter: draft the weekly update from last week's notes.",
+  "What's the status of the Hartwell Kramer agenda?",
+  "Tell Codex to also run the unit tests before committing.",
+  "New task: compare Northwind and Contoso pricing for the Fabrikam proposal.",
+  "Reply: sounds good, ship it after lunch, and copy Dana on the email."];
+let pi = 0; const showP = () => { $("#phrase").textContent = PHRASES[pi]; $("#pidx").textContent = `${pi + 1} / ${PHRASES.length}`; };
+let ctx, src, proc, stream, chunks = [], rec = false, t0 = 0;
+
+fetch("/health").then((r) => r.json()).then((h) => { $("#health").textContent = ` local STT: ${h.stt.local_model.split("/").pop()} · cloud key: ${h.cloud_key ? "yes" : "not set"}`; }).catch(() => {});
+
+// Mic stays open after first use (memory only): a 0.6 s pre-roll ring keeps word starts, 0.3 s tail after release.
+const PRE = 16000 * 0.6, TAIL_MS = 300; let ring = [], ringLen = 0, live = false;
+async function openMic() {
+  if (live) return;
+  const dev = $("#mic").value;
+  stream = await navigator.mediaDevices.getUserMedia({ audio: { deviceId: dev ? { exact: dev } : undefined, channelCount: 1, echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
+  ctx = new AudioContext({ sampleRate: 16000 }); await ctx.resume();
+  src = ctx.createMediaStreamSource(stream); proc = ctx.createScriptProcessor(2048, 1, 1);
+  proc.onaudioprocess = (e) => {
+    const d = new Float32Array(e.inputBuffer.getChannelData(0)); let m = 0; for (const v of d) m = Math.max(m, Math.abs(v)); $("#lvl").value = Math.min(1, m * 3);
+    if (rec) chunks.push(d); else { ring.push(d); ringLen += d.length; while (ringLen - ring[0].length > PRE) ringLen -= ring.shift().length; }
+  };
+  src.connect(proc); proc.connect(ctx.destination); live = true; listMics();
+}
+async function listMics() {
+  const devs = (await navigator.mediaDevices.enumerateDevices()).filter((d) => d.kind === "audioinput"); const sel = $("#mic"), cur = sel.value;
+  sel.innerHTML = devs.map((d) => `<option value="${d.deviceId}">${esc(d.label || "microphone")}</option>`).join(""); if (cur) sel.value = cur;
+  else { const t = stream && stream.getAudioTracks()[0]; const st = t && t.getSettings(); if (st && st.deviceId) sel.value = st.deviceId; }
+}
+async function start() {
+  if (rec) return; await openMic(); chunks = [...ring]; ring = []; ringLen = 0; rec = true;
+  $("#talk").classList.add("on"); $("#talk").textContent = "Listening… release to finish"; t0 = performance.now();
+}
+async function stop() {
+  if (!rec) return; await new Promise((r) => setTimeout(r, TAIL_MS)); rec = false;
+  $("#talk").classList.remove("on"); $("#talk").textContent = "Hold to talk (or hold Space)";
+  const pcm = toPcm16k(chunks, ctx.sampleRate); const secs = pcm.length / 16000;
+  if (secs < 0.3) return add(`<span class="err">Too short (${secs.toFixed(1)} s) — hold while you speak.</span>`);
+  let peak = 0; for (const v of pcm) peak = Math.max(peak, Math.abs(v) / 32768);
+  const t = performance.now();
+  try {
+    const ref = $("#refmode").checked ? PHRASES[pi] : "";
+    const r = await fetch(`/stt?${$("#stt-eng").value ? "engine=" + $("#stt-eng").value + "&" : ""}save=1${ref ? "&ref=" + encodeURIComponent(ref) : ""}`, { method: "POST", headers: { "Content-Type": "application/octet-stream" }, body: pcm.buffer });
+    const j = await r.json(); if (!r.ok) throw new Error(j.error);
+    add(`<div class="t">${esc(j.text) || "<i>(nothing recognized)</i>"}</div><div>${ref ? "expected: " + esc(ref) + " · " : ""}${secs.toFixed(1)} s · input peak ${peak.toFixed(2)}${peak < 0.1 ? " <span class=err>(very quiet — check the microphone)</span>" : ""} · ${j.engine} ${esc(j.model.split("/").pop())} · ${j.ms} ms${j.fallback ? " · fell back: " + esc(j.fallback.join("; ")) : ""}</div>`);
+    if (ref && pi < PHRASES.length - 1) { pi++; showP(); }
+  } catch (e) { add(`<span class="err">${esc(e.message)}</span>`); }
+}
+function toPcm16k(parts, sr) {
+  const n = parts.reduce((a, p) => a + p.length, 0), all = new Float32Array(n); let o = 0; for (const p of parts) { all.set(p, o); o += p.length; }
+  if (sr !== 16000) throw new Error(`capture ran at ${sr} Hz, expected 16000`);
+  const out = new Int16Array(n); for (let i = 0; i < n; i++) out[i] = Math.max(-1, Math.min(1, all[i])) * 32767;
+  return out;
+}
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+function add(html) { const l = $("#log"); if (l.classList.contains("mut") && !l.dataset.used) { l.innerHTML = ""; l.dataset.used = 1; l.classList.remove("mut"); } const d = document.createElement("div"); d.innerHTML = html; l.prepend(d); }
+
+$("#micon").onclick = () => openMic().catch((e) => add(`<span class="err">Microphone: ${esc(e.message)}</span>`));
+$("#mic").onchange = () => { if (stream) stream.getTracks().forEach((t) => t.stop()); if (ctx) ctx.close(); live = false; ring = []; ringLen = 0; openMic(); };
+showP(); $("#prev").onclick = () => { pi = Math.max(0, pi - 1); showP(); }; $("#next").onclick = () => { pi = Math.min(PHRASES.length - 1, pi + 1); showP(); };
+const b = $("#talk");
+b.addEventListener("pointerdown", (e) => { e.preventDefault(); start().catch((err) => { rec = false; add(`<span class="err">Microphone: ${esc(err.message)}</span>`); }); });
+["pointerup", "pointerleave", "pointercancel"].forEach((ev) => b.addEventListener(ev, () => stop()));
+addEventListener("keydown", (e) => { if (e.code === "Space" && !e.repeat && document.activeElement.tagName !== "TEXTAREA") { e.preventDefault(); start(); } });
+addEventListener("keyup", (e) => { if (e.code === "Space" && document.activeElement.tagName !== "TEXTAREA") { e.preventDefault(); stop(); } });
+
+$("#speak").addEventListener("click", async () => {
+  $("#tts-info").textContent = "generating…"; const t = performance.now();
+  try {
+    const r = await fetch("/tts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: $("#say").value, engine: $("#tts-eng").value }) });
+    if (!r.ok) throw new Error((await r.json()).error);
+    const url = URL.createObjectURL(await r.blob()); new Audio(url).play();
+    $("#tts-info").textContent = `${r.headers.get("X-Engine")} ${r.headers.get("X-Model").split("/").pop()} · ${r.headers.get("X-Ms")} ms model · ${Math.round(performance.now() - t)} ms round trip`;
+  } catch (e) { $("#tts-info").textContent = e.message; }
+});
+</script>
+</body></html>

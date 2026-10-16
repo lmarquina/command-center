@@ -1,0 +1,107 @@
+{
+  "demo": false,
+  "providers": [
+    "claude-code",
+    "codex",
+    "cowork",
+    "chatgpt"
+  ],
+  "claudeCode": {
+    "model": null,
+    "settingSources": null
+  },
+  "codex": {
+    "model": null,
+    "effort": null,
+    "approvalPolicy": "on-request"
+  },
+  "gateway": {
+    "port": 3000,
+    "glasses": {
+      "port": 3100,
+      "appPort": 5173,
+      "origins": null,
+      "tuning": {
+        "maxRecordingSeconds": 300,
+        "minPaintMs": 1000,
+        "homeRefreshMs": 30000,
+        "healthRefreshMs": 60000
+      },
+      "allowPlainLan": false
+    }
+  },
+  "voice": {
+    "url": "http://127.0.0.1:3200",
+    "port": 3200,
+    "hintMaxChars": 1000,
+    "stt": {
+      "engine": "auto",
+      "fallback": true,
+      "local_model": "mlx-community/Qwen3-ASR-1.7B-bf16",
+      "cloud_model": "gpt-4o-transcribe",
+      "route_by_length": {
+        "threshold_s": 15,
+        "short": "local",
+        "long": "cloud"
+      }
+    },
+    "tts": {
+      "engine": "local",
+      "fallback": true,
+      "local_model": "prince-canuma/Kokoro-82M",
+      "cloud_model": "gpt-4o-mini-tts",
+      "max_chars": 600,
+      "voices": {
+        "cowork": {
+          "local": {
+            "voice": "af_heart",
+            "lang_code": "a"
+          },
+          "cloud": "shimmer"
+        },
+        "claude-code": {
+          "local": {
+            "voice": "am_michael",
+            "lang_code": "a"
+          },
+          "cloud": "onyx"
+        },
+        "codex": {
+          "local": {
+            "voice": "af_bella",
+            "lang_code": "a"
+          },
+          "cloud": "fable"
+        },
+        "chatgpt": {
+          "local": {
+            "voice": "af_bella",
+            "lang_code": "a"
+          },
+          "cloud": "fable"
+        },
+        "system": {
+          "local": {
+            "voice": "am_fenrir",
+            "lang_code": "a"
+          },
+          "cloud": "alloy"
+        }
+      }
+    },
+    "cloud": {
+      "keychain_service": "command-center-openai"
+    },
+    "modelsDir": null
+  },
+  "stack": {
+    "services": [
+      "agentd",
+      "gateway",
+      "glasses",
+      "voice"
+    ],
+    "keepAwake": true,
+    "simAutomationPort": 9898
+  }
+}

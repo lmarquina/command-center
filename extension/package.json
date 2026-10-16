@@ -1,0 +1,14 @@
+{
+  "name": "@command-center/extension",
+  "version": "0.3.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node tests/run-handlers.mjs && node tests/run-fixtures.mjs && node tests/run-chatgpt-fixtures.mjs && node tests/run-host.mjs && node tests/run-merge.mjs",
+    "install-host": "sh install.sh",
+    "bridge": "node cli/bridge.mjs"
+  },
+  "devDependencies": {
+    "jsdom": "^24.1.3"
+  }
+}

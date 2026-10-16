@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Command Center demo</title>
+<style>
+  :root { --bg: #0b0d0c; --panel: #121514; --line: #232826; --text: #e8ece9; --dim: #8a948f; --green: #39ff6a; }
+  * { box-sizing: border-box; margin: 0; }
+  body { width: 1920px; height: 1080px; background: var(--bg); color: var(--text); font: 22px/1.4 -apple-system, "SF Pro Text", "Helvetica Neue", Arial, sans-serif; overflow: hidden; position: relative; }
+  header { position: absolute; left: 64px; right: 64px; top: 40px; display: flex; align-items: baseline; gap: 20px; }
+  header h1 { font-size: 30px; font-weight: 650; letter-spacing: .02em; }
+  header .sub { color: var(--dim); font-size: 20px; }
+  header .tag { margin-left: auto; color: var(--dim); font-size: 16px; border: 1px solid var(--line); border-radius: 999px; padding: 4px 14px; }
+  .label { color: var(--dim); font-size: 15px; letter-spacing: .14em; text-transform: uppercase; margin-bottom: 14px; }
+  #glasses { position: absolute; left: 64px; top: 130px; width: 1040px; }
+  .lens { width: 1040px; height: 520px; border-radius: 28px; background: #000; border: 1px solid var(--line); display: flex; align-items: center; justify-content: center;
+          box-shadow: 0 0 80px rgba(57, 255, 106, .07) inset, 0 20px 60px rgba(0,0,0,.5); }
+  .lens img { width: 960px; height: 480px; image-rendering: auto; filter: drop-shadow(0 0 6px rgba(57,255,106,.35)); }
+  .note { color: var(--dim); font-size: 16px; margin-top: 12px; }
+  #computer { position: absolute; left: 1160px; top: 130px; width: 696px; }
+  .screen { width: 696px; height: 760px; border-radius: 16px; overflow: hidden; border: 1px solid var(--line); background: var(--panel); }
+  .screen img { width: 696px; display: block; }
+  #caption { position: absolute; left: 64px; top: 748px; width: 1040px; }
+  #say { font-size: 48px; font-weight: 600; line-height: 1.15; min-height: 66px; }
+  #say .mic { display: inline-block; width: 22px; height: 22px; border-radius: 50%; background: var(--green); margin-right: 18px; vertical-align: middle; box-shadow: 0 0 18px var(--green); }
+  #what { color: var(--dim); font-size: 26px; margin-top: 18px; max-width: 1000px; }
+  #step { position: absolute; left: 64px; bottom: 44px; color: var(--dim); font-size: 16px; }
+  #title { position: absolute; inset: 0; display: none; flex-direction: column; justify-content: center; padding: 0 160px; background: var(--bg); }
+  #title h2 { font-size: 72px; font-weight: 700; line-height: 1.1; }
+  #title p { color: var(--dim); font-size: 30px; margin-top: 28px; max-width: 1300px; }
+  #title .dot { color: var(--green); }
+</style>
+</head>
+<body>
+  <header><h1>Command Center</h1><span class="sub">your AI agents, on Even Realities G2</span><span class="tag">demo data</span></header>
+  <section id="glasses"><div class="label">On the glasses</div><div class="lens"><img id="g" alt=""></div><div class="note">Glasses simulator: the same app that runs on the G2</div></section>
+  <section id="computer"><div class="label">On the computer</div><div class="screen"><img id="c" alt=""></div></section>
+  <section id="caption"><div id="say"></div><div id="what"></div></section>
+  <div id="step"></div>
+  <div id="title"><h2 id="tt"></h2><p id="tp"></p></div>
+<script>
+  window.setFrame = ({ glasses, computer, say, what, step, title }) => {
+    if (glasses) document.getElementById("g").src = glasses;
+    if (computer) document.getElementById("c").src = computer;
+    document.getElementById("say").innerHTML = say ? `<span class="mic"></span>“${say.replace(/</g, "&lt;")}”` : "";
+    document.getElementById("what").textContent = what || "";
+    document.getElementById("step").textContent = step || "";
+    const t = document.getElementById("title");
+    t.style.display = title ? "flex" : "none";
+    if (title) { document.getElementById("tt").innerHTML = title.h; document.getElementById("tp").textContent = title.p || ""; }
+    return Promise.all([...document.images].map((i) => i.complete ? 0 : new Promise((r) => { i.onload = i.onerror = r; })));
+  };
+</script>
+</body>
+</html>
