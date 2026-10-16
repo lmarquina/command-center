@@ -16,7 +16,8 @@ export async function startRpcServer({ core, sockPath, health = {}, checkHealth 
     sessions: (p) => core.listSessions(p.query, { providers: p.providers }),
     get: (p) => core.getSession(p.sessionId, { limit: p.limit }),
     status: (p) => core.getStatus(p.sessionId),
-    attention: () => core.needsAttention(),
+    // in presentation mode a request from a not-yet-listed session would be masked by mistake: list first
+    attention: async () => { if (core.hasUnknownAttention && core.hasUnknownAttention()) await core.listSessions(); return core.needsAttention(); },
     ack: (p) => core.ack(p.sessionId),
     create: (p) => core.createSession(p),
     steps: (p) => core.stepList(p.sessionId, p),
@@ -27,6 +28,7 @@ export async function startRpcServer({ core, sockPath, health = {}, checkHealth 
     deny: (p) => core.deny(p.requestId, { client: p.client, takeover: p.takeover }),
     answer: (p) => core.answerQuestion(p.requestId, p.answer, { client: p.client }),
     release: (p) => core.releaseWriter(p.sessionId, p.client),
+    close: (p) => core.closeSession(p.sessionId, { client: p.client }),
     locks: () => core.locks.list(),
     shutdown: () => { setTimeout(() => onShutdown("shutdown request"), 50); return { stopping: true }; },
   };

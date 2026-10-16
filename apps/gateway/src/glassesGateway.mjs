@@ -510,6 +510,7 @@ export function startGlassesGateway({ agentd, live, token, port = 3100, host = "
   return { wss, localWss, conns, latest, walkMode: (on) => { for (const c of conns) { c.walkOverride = on; c.walk = { mode: "glance" }; paint(c, true).catch(() => {}); } return conns.size; },
     read: (who, text) => { for (const c of conns) startReading(c, who, text); return conns.size; },
     // Typed utterance (demo recordings, tests): the same path as speech, without the microphone.
+    setFreeTalk: (on) => { setFree(!!on); return prefs.free; },
     hear: (text) => { for (const c of conns) if (c.ready) handleUtterance(c, { text: String(text), engine: "typed", ms: 0 }, { prev: c.st, screenCtx: screenContext(c.st, c.page), auto: false, t0: Date.now(), tRelease: Date.now() }).catch((e) => log("hear", e.message)); return conns.size; },
     speakAll: (text, who, method) => { for (const c of conns) speak(c, text, who, method); return conns.size; } };
 }

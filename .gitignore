@@ -18,3 +18,4 @@ __pycache__/
 *.pyc
 run-demo/
 tools/demo/out/
+tools/demo/bin/

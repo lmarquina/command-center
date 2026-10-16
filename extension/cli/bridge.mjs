@@ -29,6 +29,7 @@ const MAP = {
   snapshot: (id) => ["debug.snapshot", id && id !== "-" ? { sessionId: id } : {}],
   watch: () => ["events.subscribe"],
   health: () => ["bridge.health"], inventory: () => ["session.inventory"],
+  "demo-window": (url) => ["demo.window", { url }], "demo-close": () => ["demo.close"],
   new: (message) => ["session.new", { message, force }],
 };
 if (!MAP[cmd]) { console.error("usage: bridge health|inventory|doctor|ping|sessions|registry|open|read|status|send|answer|approve|deny|stop|watch|snapshot …"); process.exit(2); }

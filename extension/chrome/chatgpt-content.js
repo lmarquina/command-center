@@ -99,7 +99,9 @@
         if (!nc.el) fail(E.NOT_FOUND, "New chat button not found");
         nc.el.click();
         if (!(await waitFor(() => !D.identity(document).sessionId && document.querySelector(D.SEL.composer), 8000))) fail(E.VERIFY, "did not reach an empty new chat");
-        await settle(600); // let the fresh editor finish mounting
+        // Wait for the fresh editor itself, not for a quiet page: in a long-hidden tab a quiet page means timers fire
+        // about once a minute, and a fixed pause here took longer than the whole request is allowed.
+        await waitFor(() => { const c = document.querySelector(D.SEL.composer); return c && c.isConnected && c.getAttribute("contenteditable") === "true" ? c : null; }, 5000);
       }
       await typeAndSend(message, !!force);
       const id = await waitFor(() => { const i = D.identity(document); return i.verified ? i : null; }, 20000, 200);

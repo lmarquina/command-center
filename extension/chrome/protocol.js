@@ -9,7 +9,7 @@
       "bridge.ping", "bridge.doctor",
       "session.list", "session.open", "session.read", "session.status",
       "session.send", "session.answer", "session.approve", "session.deny", "session.stop",
-      "session.inventory", "bridge.health", "debug.snapshot",
+      "session.inventory", "bridge.health", "demo.window", "demo.close", "debug.snapshot",
     ],
     STATUSES: ["idle", "working", "waiting_for_input", "approval_required", "interrupted", "complete", "failed", "unknown"],
     EVENTS: ["session.statusChanged", "session.messageAdded", "session.messageUpdated", "session.approvalRequested", "session.questionRequested", "session.completed", "session.interrupted", "session.changed", "bridge.tabReady"],

@@ -66,6 +66,7 @@ async function api(req, res, url) {
   }
   // Test hooks for the glasses: force walking mode / start a reading, or speak a line.
   if (m === "POST" && p === "/api/glasses/walk") { const { on, read, who } = await body(req); return json(res, 200, { glasses: glasses ? (read ? glasses.read(who || "chatgpt", String(read)) : glasses.walkMode(on === "auto" ? null : !!on)) : 0 }); }
+  if (m === "POST" && p === "/api/glasses/free-talk") { const { on } = await body(req); return json(res, 200, { free: glasses ? glasses.setFreeTalk(on) : null }); }
   if (m === "POST" && p === "/api/glasses/voice") { const { text } = await body(req); return json(res, 200, { glasses: glasses ? glasses.hear(String(text || "").slice(0, 500)) : 0 }); }
   if (m === "POST" && p === "/api/glasses/say") { const { text, voice, method } = await body(req); return json(res, 200, { glasses: glasses ? glasses.speakAll(String(text || "").slice(0, 300), voice || "system", method) : 0 }); }
   if (m === "POST" && p === "/api/sessions") {

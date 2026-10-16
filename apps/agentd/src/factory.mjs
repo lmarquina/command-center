@@ -9,7 +9,7 @@ export async function buildCore({ config, log = () => {}, owner = `agentd:${proc
     const { demoWorld } = await import("@command-center/demo/world.mjs");
     const w = demoWorld();
     for (const p of enabled) providers[p] = new DemoProvider(p, w[p] || []);
-    return new SessionCore({ providers });
+    return new SessionCore({ providers, presentation: config.presentation });
   }
   if (enabled.includes("claude-code")) {
     const { ClaudeCodeAdapter } = await import("@command-center/claude-code/ClaudeCodeAdapter.mjs");
@@ -30,5 +30,5 @@ export async function buildCore({ config, log = () => {}, owner = `agentd:${proc
     if (enabled.includes("cowork")) providers.cowork = new WebBridgeProvider("cowork", client, { launcher: new DesktopLauncher({ log }) });
     if (enabled.includes("chatgpt")) providers.chatgpt = new WebBridgeProvider("chatgpt", client);
   }
-  return new SessionCore({ providers });
+  return new SessionCore({ providers, presentation: config.presentation });
 }

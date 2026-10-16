@@ -19,9 +19,9 @@ const REQ = {
   create: () => ["create", { provider: a1, cwd: a2 && a2 !== "-" ? path.resolve(a2) : undefined, title: ["chatgpt", "cowork"].includes(a1) ? undefined : a3, firstMessage: ["chatgpt", "cowork"].includes(a1) ? a3 : undefined, project: opt("--project"), projectId: opt("--project-id"), client, force: flag("--force") }],
   send: () => ["send", { sessionId: a1, message: a2, client, takeover, detach: flag("--detach") }], steer: () => ["steer", { sessionId: a1, message: a2, client }],
   interrupt: () => ["interrupt", { sessionId: a1, client }], approve: () => ["approve", { requestId: a1, client, takeover }], deny: () => ["deny", { requestId: a1, client, takeover }],
-  answer: () => ["answer", { requestId: a1, answer: a2, client }], release: () => ["release", { sessionId: a1, client }], watch: () => ["watch"], shutdown: () => ["shutdown"],
+  answer: () => ["answer", { requestId: a1, answer: a2, client }], release: () => ["release", { sessionId: a1, client }], close: () => ["close", { sessionId: a1, client }], watch: () => ["watch"], shutdown: () => ["shutdown"],
 };
-if (!REQ[cmd]) { console.error("usage: agentctl ping|caps|sessions|get|status|attention|locks|create|send|steer|interrupt|approve|deny|answer|release|watch|shutdown"); process.exit(2); }
+if (!REQ[cmd]) { console.error("usage: agentctl ping|caps|sessions|get|status|attention|locks|create|send|steer|interrupt|approve|deny|answer|release|close|watch|shutdown"); process.exit(2); }
 const [method, params] = REQ[cmd]();
 const t0 = performance.now();
 const s = net.createConnection(SOCK);

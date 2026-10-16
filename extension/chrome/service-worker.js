@@ -196,6 +196,21 @@ async function handle(method, params = {}) {
     }
     case "session.inventory": runInventory("request"); return { started: true, ...(await chrome.storage.local.get("inventory:cowork"))["inventory:cowork"] && { last: (await chrome.storage.local.get("inventory:cowork"))["inventory:cowork"].at } };
     case "bridge.health": return health();
+    // Demo recording: one narrow window showing a single session (the sites hide their sidebars at this width),
+    // captured by the recorder as a single window, so nothing else on the screen can end up in a frame.
+    case "demo.window": {
+      const key = "demoWindowId", known = (await chrome.storage.session.get(key))[key];
+      const box = { left: params.left ?? 40, top: params.top ?? 40, width: params.width ?? 560, height: params.height ?? 980 };
+      let win = known ? await chrome.windows.get(known, { populate: true }).catch(() => null) : null;
+      if (win) { await chrome.tabs.update(win.tabs[0].id, { url: params.url }); await chrome.windows.update(win.id, { ...box, focused: true }); }
+      else { win = await chrome.windows.create({ url: params.url, ...box, focused: true, type: "popup" }); await chrome.storage.session.set({ [key]: win.id }); }
+      return { windowId: win.id };
+    }
+    case "demo.close": {
+      const id = (await chrome.storage.session.get("demoWindowId")).demoWindowId;
+      if (id) { await chrome.windows.remove(id).catch(() => {}); await chrome.storage.session.remove("demoWindowId"); }
+      return { closed: !!id };
+    }
     case "debug.snapshot": {
       const { tab } = params.sessionId ? await ensureOpen(params.sessionId, prov) : await pickTab(null, prov);
       return cs(tab.id, "snapshot");

@@ -103,5 +103,12 @@
     ],
     "keepAwake": true,
     "simAutomationPort": 9898
+  },
+  "presentation": {
+    "enabled": false,
+    "cwdPrefixes": [
+      "~/Demo"
+    ],
+    "titles": []
   }
 }

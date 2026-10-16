@@ -47,3 +47,19 @@ confirmation).
 4. Open and merge a private PR as usual, then `npm run publish -- --push`.
 5. Close the public PR with a comment that it is included in the latest update.
 
+## Demos and recordings
+- **Presentation mode** (`config.presentation`): every session not listed in `idsFile` (or under `cwdPrefixes`, or
+  matching `titles`, or created during the demo) keeps its place and status but shows as `███` everywhere:
+  lists, attention, opened sessions, live text.
+- **Made-up data:** `demo: true` (or `CC_DEMO=1`) with `tools/demo/record.mjs`.
+- **Real apps:** `tools/demo/prepare-real.mjs` sets up real demo sessions about a made-up project in
+  `/Users/Shared/Demo/acme-api`; `tools/demo/record-real.mjs` films the glasses next to each app.
+- **Before a take:** switch free talk off (`POST /api/glasses/free-talk {"on":false}`) BEFORE starting the
+  simulator. The simulator listens through the computer's microphone from the moment it connects.
+
+## Starting Cowork tasks when the stack runs at login
+The Desktop launcher uses macOS Accessibility. macOS grants that per app that started the process, and a stack
+started by the login item is not covered by your terminal's permission. Add
+`packages/providers/desktop-launcher/native/ax` under System Settings → Privacy & Security → Accessibility, or
+new Cowork tasks fail with DESKTOP_UNAVAILABLE.
+

@@ -4,10 +4,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "record": "node record.mjs"
+    "record": "node record.mjs",
+    "postinstall": "chmod +x ../../node_modules/node-pty/prebuilds/*/spawn-helper 2>/dev/null || true"
   },
   "devDependencies": {
+    "@xterm/xterm": "^5.5.0",
     "ffmpeg-static": "^5.2.0",
+    "node-pty": "^1.1.0",
     "playwright-core": "^1.48.0"
   },
   "dependencies": {

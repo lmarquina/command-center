@@ -4,18 +4,21 @@ import { parseSessionId, sessionIdFor, parseRequestId, PROVIDERS } from "./ids.m
 import { CAPABILITIES } from "./capabilities.mjs";
 import { LockManager } from "./locks.mjs";
 import { AttentionBoard } from "./attention.mjs";
+import { Presentation } from "./presentation.mjs";
 
 const TERMINAL = new Set(["agent.completed", "agent.interrupted", "agent.failed"]);
 const err = (code, message, extra) => Object.assign(new Error(message), { code, ...extra });
 
 export class SessionCore extends EventEmitter {
-  /** @param {{providers: Record<string, object>, lockTtlMs?: number}} o */
-  constructor({ providers, lockTtlMs } = {}) {
+  /** @param {{providers: Record<string, object>, lockTtlMs?: number, presentation?: object}} o */
+  constructor({ providers, lockTtlMs, presentation } = {}) {
     super(); this.setMaxListeners(200);
     this.providers = providers;            // name -> provider (subset of PROVIDERS)
     this.locks = new LockManager({ ttlMs: lockTtlMs });
     this.attention = new AttentionBoard();
     this.seen = new Set(); this.seqs = new Map(); this.health = {};
+    this.present = presentation instanceof Presentation ? presentation : new Presentation(presentation);   // demo masking (off by default)
+    this.known = new Map();   // sessionId -> last listed row (for masking items and events)
     for (const [name, p] of Object.entries(providers)) p.onEvent((ev) => this.#publish(ev));
   }
 
@@ -37,7 +40,7 @@ export class SessionCore extends EventEmitter {
     const n = (this.seqs.get(ev.sessionId) || 0) + 1; this.seqs.set(ev.sessionId, n);
     const out = { ...ev, seq: n };
     this.attention.apply(out);
-    this.emit("event", out);
+    this.emit("event", this.present.event(out, this.known.get(ev.sessionId) || { sessionId: ev.sessionId }));
   }
 
   // ---------- reads (no lock) ----------
@@ -50,11 +53,20 @@ export class SessionCore extends EventEmitter {
       else degraded[names[i]] = { code: r.reason.code, message: r.reason.message };
     });
     sessions.sort((a, b) => String(b.updatedAt || "").localeCompare(String(a.updatedAt || "")));
-    return { sessions, degraded };
+    for (const s of sessions) this.known.set(s.sessionId, s);
+    return { sessions: sessions.map((s) => this.present.row(s)), degraded };
   }
-  async getSession(sessionId, o) { const { p, native, provider } = this.#route(sessionId); const d = await p.get(native, o); return { ...d, sessionId, provider, capabilities: CAPABILITIES[provider], writer: this.locks.holder(sessionId) }; }
+  async getSession(sessionId, o) {
+    const { p, native, provider } = this.#route(sessionId); const d = await p.get(native, o);
+    const out = { ...d, sessionId, provider, capabilities: CAPABILITIES[provider], writer: this.locks.holder(sessionId) };
+    if (this.present.shows(this.known.get(sessionId) || { sessionId, title: d.title, cwd: d.cwd })) return out;
+    const row = this.present.row({ sessionId, title: d.title });
+    return { ...out, title: row.title, masked: true, messages: (out.messages || []).map((m) => ({ role: m.role, text: this.present.event({ text: m.text || "x" }, null).text })) };
+  }
   async getStatus(sessionId) { const { p, native } = this.#route(sessionId); return { sessionId, ...(await p.status(native)), writer: this.locks.holder(sessionId) }; }
-  needsAttention() { return this.attention.list(); }
+  /** True if the attention list mentions a session whose details (folder, title) haven't been listed yet. */
+  hasUnknownAttention() { return this.present.enabled && this.attention.list().some((a) => !this.known.has(a.sessionId)); }
+  needsAttention() { return this.attention.list().map((a) => this.present.item(a, this.known.get(a.sessionId) || { sessionId: a.sessionId })); }
   /** Inner steps of a step group / one step's details (reads; only providers that support it, e.g. Cowork). */
   async stepList(sessionId, o) { const { p, native, provider } = this.#route(sessionId); if (!p.stepList) throw err("NOT_SUPPORTED", `${provider} has no step groups`); return p.stepList(native, o); }
   async stepOpen(sessionId, o) { const { p, native, provider } = this.#route(sessionId); if (!p.stepOpen) throw err("NOT_SUPPORTED", `${provider} has no step groups`); return p.stepOpen(native, o); }
@@ -66,6 +78,7 @@ export class SessionCore extends EventEmitter {
     if (!CAPABILITIES[provider].canCreateSession) throw err("NOT_SUPPORTED", `${provider} cannot create sessions through the command center`);
     const s = await p.create(opts);
     const sessionId = sessionIdFor(provider, s.nativeId);
+    this.present.created.add(sessionId);   // made during a demo: shown in clear
     this.locks.acquire(sessionId, client);
     this.#publish({ id: `${sessionId}:created`, type: "session.created", provider, sessionId, at: new Date().toISOString(), title: opts.title });
     return { ...s, sessionId, provider };
@@ -136,5 +149,7 @@ export class SessionCore extends EventEmitter {
     finally { this.off("event", onEv); }
   }
   releaseWriter(sessionId, client) { this.locks.release(sessionId, client); }
+  /** Let go of a session in its harness (e.g. unload a Codex thread so the Codex app or CLI can open it). */
+  async closeSession(sessionId, { client } = {}) { const { p, native } = this.#route(sessionId); this.locks.release(sessionId, client); return p.close ? p.close(native) : { ok: true }; }
 }
 export { PROVIDERS };
